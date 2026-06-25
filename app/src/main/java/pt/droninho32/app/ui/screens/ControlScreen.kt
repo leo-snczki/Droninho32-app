@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Map
@@ -78,6 +79,7 @@ import pt.droninho32.app.viewmodel.LinkState
 fun ControlScreen(
     vm: ControlViewModel,
     onOpenMap: () -> Unit,
+    onOpenCamera: () -> Unit,
     onToggleScreenRecording: () -> Unit,
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -134,6 +136,11 @@ fun ControlScreen(
                     }
                     if (state.telemetryRecording) StatusPill("REC ${state.recordedPoints}", DnRed)
                     if (state.screenRecording) StatusPill("● TELA", DnRed)
+                    OutlinedButton(onClick = onOpenCamera) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text(stringResource(R.string.ctrl_camera))
+                    }
                     OutlinedButton(onClick = onOpenMap) {
                         Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(6.dp))

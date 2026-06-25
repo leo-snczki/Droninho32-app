@@ -23,6 +23,9 @@ android {
         buildConfigField("String", "DEFAULT_BACKEND_URL", "\"http://10.0.2.2:8000/\"")
         // O drone expõe sempre este IP em modo SoftAP (ver ARCHITECTURE.md §3 e §8).
         buildConfigField("String", "DRONE_URL", "\"http://192.168.4.1/\"")
+        // ESP32-CAM (estação no AP do drone, IP fixo 192.168.4.2). O firmware também
+        // anuncia este URL em /api/status; este é só o fallback.
+        buildConfigField("String", "CAMERA_URL", "\"http://192.168.4.2/stream\"")
     }
 
     buildTypes {

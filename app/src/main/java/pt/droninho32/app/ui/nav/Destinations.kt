@@ -6,6 +6,7 @@ object Routes {
     const val DRONES = "drones"
     const val CONTROL = "control"
     const val MAP = "map"
+    const val CAMERA = "camera"
     const val HISTORY = "history"
 
     // Detalhe do voo recebe um id como argumento.

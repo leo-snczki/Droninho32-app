@@ -69,6 +69,12 @@
     <string name="ctrl_record_screen_stop">Parar gravação</string>
     <string name="ctrl_calibrate">Calibrar</string>
     <string name="ctrl_rc_blocked">Comandos bloqueados após paragem de emergência.</string>
+    <string name="ctrl_camera">Câmara</string>
+
+    <!-- Câmara (ESP32-CAM) -->
+    <string name="camera_title">Câmara do drone</string>
+    <string name="camera_connecting">A ligar ao vídeo…\n%1$s</string>
+    <string name="camera_error">Sem vídeo. Confirma que a ESP32-CAM está ligada ao AP \"Droninho32\".\n%1$s</string>
 
     <!-- Calibração -->
     <string name="cal_title">Calibração dos joysticks</string>

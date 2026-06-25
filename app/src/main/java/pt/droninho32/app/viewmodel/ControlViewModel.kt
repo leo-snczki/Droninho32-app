@@ -38,6 +38,8 @@ data class ControlUiState(
     val telemetry: TelemetryPoint? = null,
     val armed: Boolean = false,
     val status: String = "idle",
+    /** URL do stream MJPEG da ESP32-CAM (anunciado pelo firmware em /api/status). */
+    val cameraUrl: String = "",
 
     // --- Joysticks: posição CRUA normalizada [-1, 1] (centro 0; cima = +1). ---
     val leftX: Float = 0f,
@@ -152,6 +154,16 @@ class ControlViewModel(
                     drone.sendCommand(Command.rc(s.roll, s.pitch, s.yaw, s.throttle))
                 }
                 delay(RC_INTERVAL_MS)
+            }
+        }
+
+        // Descobre o URL da câmara (anunciado pelo firmware em /api/status).
+        viewModelScope.launch {
+            when (val r = drone.getStatus()) {
+                is Outcome.Ok -> if (r.value.cameraUrl.isNotBlank()) {
+                    _state.update { it.copy(cameraUrl = r.value.cameraUrl) }
+                }
+                is Outcome.Err -> { /* mantém o default da app (BuildConfig.CAMERA_URL) */ }
             }
         }
     }

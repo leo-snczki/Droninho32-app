@@ -1,5 +1,6 @@
 package pt.droninho32.app.data.dto
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
@@ -59,4 +60,5 @@ data class StatusRes(
     val armed: Boolean = false,
     val status: String = "",
     val ip: String = "",
+    @Json(name = "camera_url") val cameraUrl: String = "",
 )

@@ -24,7 +24,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import pt.droninho32.app.BuildConfig
 import pt.droninho32.app.di.ServiceLocator
+import pt.droninho32.app.ui.screens.CameraScreen
 import pt.droninho32.app.ui.screens.ControlScreen
 import pt.droninho32.app.ui.screens.DroneListScreen
 import pt.droninho32.app.ui.screens.FlightDetailScreen
@@ -135,8 +138,15 @@ private fun NavGraphBuilder.mainGraph(
         ControlScreen(
             vm = controlVm,
             onOpenMap = { nav.navigate(Routes.MAP) },
+            onOpenCamera = { nav.navigate(Routes.CAMERA) },
             onToggleScreenRecording = onToggleScreenRecording,
         )
+    }
+
+    composable(Routes.CAMERA) {
+        val s by controlVm.state.collectAsStateWithLifecycle()
+        val url = s.cameraUrl.ifBlank { BuildConfig.CAMERA_URL }
+        CameraScreen(streamUrl = url, onBack = { nav.popBackStack() })
     }
 
     composable(Routes.MAP) {
