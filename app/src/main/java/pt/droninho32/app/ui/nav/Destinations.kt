@@ -2,7 +2,7 @@ package pt.droninho32.app.ui.nav
 
 /** Rotas de navegação (navigation-compose). Strings centralizadas para evitar erros. */
 object Routes {
-    const val LOGIN = "login"
+    const val ACCOUNT = "account"
     const val DRONES = "drones"
     const val CONTROL = "control"
     const val MAP = "map"

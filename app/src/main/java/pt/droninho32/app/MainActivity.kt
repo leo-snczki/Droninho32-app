@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
             drone = locator.droneRepository,
             backend = locator.backendRepository,
             settings = locator.settings,
+            pendingStore = locator.pendingFlights,
             isLoggedInProvider = { locator.authRepository.cachedToken != null },
         )
     }
@@ -100,7 +101,6 @@ class MainActivity : ComponentActivity() {
                         locator = locator,
                         controlVm = controlVm,
                         activityViewModelOwner = this@MainActivity,
-                        startLoggedIn = logged,
                         onToggleScreenRecording = ::toggleScreenRecording,
                     )
                 }

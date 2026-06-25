@@ -5,6 +5,7 @@ import pt.droninho32.app.data.api.NetworkModule
 import pt.droninho32.app.data.repo.AuthRepository
 import pt.droninho32.app.data.repo.BackendRepository
 import pt.droninho32.app.data.repo.DroneRepository
+import pt.droninho32.app.data.store.PendingFlightStore
 import pt.droninho32.app.data.store.SettingsStore
 
 /**
@@ -15,6 +16,9 @@ import pt.droninho32.app.data.store.SettingsStore
 class ServiceLocator(appContext: Context) {
 
     val settings: SettingsStore = SettingsStore(appContext)
+
+    /** Armazenamento local (offline) dos voos por sincronizar com o backend. */
+    val pendingFlights: PendingFlightStore = PendingFlightStore(appContext)
 
     // A rede precisa de ler o token de forma síncrona -> usa o cache do AuthRepository.
     // Resolvemos a ordem de inicialização com um provider lateinit-safe.

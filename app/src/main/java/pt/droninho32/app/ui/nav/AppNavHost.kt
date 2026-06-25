@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -24,15 +25,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pt.droninho32.app.BuildConfig
 import pt.droninho32.app.di.ServiceLocator
+import pt.droninho32.app.ui.screens.AccountScreen
 import pt.droninho32.app.ui.screens.CameraScreen
 import pt.droninho32.app.ui.screens.ControlScreen
 import pt.droninho32.app.ui.screens.DroneListScreen
 import pt.droninho32.app.ui.screens.FlightDetailScreen
 import pt.droninho32.app.ui.screens.HistoryScreen
-import pt.droninho32.app.ui.screens.LoginScreen
 import pt.droninho32.app.ui.screens.MapScreen
 import pt.droninho32.app.viewmodel.AuthViewModel
 import pt.droninho32.app.viewmodel.ControlViewModel
@@ -44,31 +44,30 @@ private data class BottomItem(val route: String, val label: String, val icon: Im
 private val bottomItems = listOf(
     BottomItem(Routes.CONTROL, "Controlo", Icons.Default.FlightTakeoff),
     BottomItem(Routes.HISTORY, "Histórico", Icons.Default.History),
-    BottomItem(Routes.DRONES, "Drones", Icons.Default.Memory),
+    BottomItem(Routes.ACCOUNT, "Conta", Icons.Default.Person),
 )
 
 /**
- * Grafo de navegação da app. O ControlViewModel é criado ao nível da Activity
- * (owner partilhado) para que ControlScreen e MapScreen vejam a MESMA telemetria.
+ * Grafo de navegação. A app **abre no Controlo** (não há porta de login): controlar o
+ * drone só precisa do WiFi do drone, sem Internet. O login é OPCIONAL, na aba "Conta",
+ * e serve apenas para sincronizar/ver voos no backend quando há Internet.
+ *
+ * O ControlViewModel é criado na MainActivity (owner partilhado) e passado aqui, para
+ * que Controlo, Mapa e Câmara vejam a MESMA telemetria.
  */
 @Composable
 fun AppNavHost(
     locator: ServiceLocator,
     controlVm: ControlViewModel,
     activityViewModelOwner: androidx.lifecycle.ViewModelStoreOwner,
-    startLoggedIn: Boolean,
     onToggleScreenRecording: () -> Unit,
 ) {
     val nav = rememberNavController()
 
-    // ViewModel de autenticação partilhado ao nível da Activity.
-    // (o ControlViewModel é criado na MainActivity e passado aqui)
     val authVm: AuthViewModel = viewModel(
         viewModelStoreOwner = activityViewModelOwner,
         factory = AuthViewModel.Factory(locator.authRepository),
     )
-
-    val start = if (startLoggedIn) Routes.CONTROL else Routes.LOGIN
 
     val backStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -100,30 +99,11 @@ fun AppNavHost(
     ) { padding ->
         NavHost(
             navController = nav,
-            startDestination = start,
+            startDestination = Routes.CONTROL,
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
-            authGraph(nav, authVm)
             mainGraph(nav, locator, controlVm, authVm, onToggleScreenRecording)
         }
-    }
-}
-
-private fun NavGraphBuilder.authGraph(nav: NavHostController, authVm: AuthViewModel) {
-    composable(Routes.LOGIN) {
-        LoginScreen(
-            vm = authVm,
-            onLoggedIn = {
-                nav.navigate(Routes.CONTROL) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
-                }
-            },
-            onSkip = {
-                nav.navigate(Routes.CONTROL) {
-                    popUpTo(Routes.LOGIN) { inclusive = true }
-                }
-            },
-        )
     }
 }
 
@@ -150,9 +130,14 @@ private fun NavGraphBuilder.mainGraph(
     }
 
     composable(Routes.MAP) {
-        MapScreen(
-            vm = controlVm,
-            onBack = { nav.popBackStack() },
+        MapScreen(vm = controlVm, onBack = { nav.popBackStack() })
+    }
+
+    composable(Routes.ACCOUNT) {
+        AccountScreen(
+            vm = authVm,
+            controlVm = controlVm,
+            onOpenDrones = { nav.navigate(Routes.DRONES) },
         )
     }
 
@@ -167,22 +152,22 @@ private fun NavGraphBuilder.mainGraph(
                 nav.navigate(Routes.CONTROL) { launchSingleTop = true }
             },
             onLogout = {
-                // Limpa a sessão e volta ao login, esvaziando a pilha de navegação.
                 authVm.logout()
-                nav.navigate(Routes.LOGIN) {
-                    popUpTo(0) { inclusive = true }
-                }
+                nav.popBackStack()
             },
         )
     }
 
     composable(Routes.HISTORY) {
+        val authState by authVm.state.collectAsStateWithLifecycle()
         val flightsVm: FlightsViewModel = viewModel(
             factory = FlightsViewModel.Factory(locator.backendRepository),
         )
         HistoryScreen(
             vm = flightsVm,
+            loggedIn = authState.loggedIn,
             onOpenFlight = { id -> nav.navigate(Routes.flightDetail(id)) },
+            onOpenAccount = { nav.navigate(Routes.ACCOUNT) { launchSingleTop = true } },
         )
     }
 

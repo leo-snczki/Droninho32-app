@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.osmdroid.util.GeoPoint
 import pt.droninho32.app.data.dto.Command
 import pt.droninho32.app.data.dto.FlightReq
@@ -19,6 +21,8 @@ import pt.droninho32.app.data.dto.TelemetryPoint
 import pt.droninho32.app.data.repo.BackendRepository
 import pt.droninho32.app.data.repo.DroneRepository
 import pt.droninho32.app.data.store.JoystickCalibration
+import pt.droninho32.app.data.store.PendingFlight
+import pt.droninho32.app.data.store.PendingFlightStore
 import pt.droninho32.app.data.store.SettingsStore
 import pt.droninho32.app.domain.Outcome
 import java.text.SimpleDateFormat
@@ -58,6 +62,8 @@ data class ControlUiState(
     /** A gravar telemetria localmente (entre ARM e STOP/upload). */
     val telemetryRecording: Boolean = false,
     val recordedPoints: Int = 0,
+    /** Voos gravados localmente à espera de sincronização com o backend. */
+    val pendingFlights: Int = 0,
     /** A gravar a tela (MediaProjection) — controlado pela Activity/serviço. */
     val screenRecording: Boolean = false,
 
@@ -89,6 +95,7 @@ class ControlViewModel(
     private val drone: DroneRepository,
     private val backend: BackendRepository,
     private val settings: SettingsStore,
+    private val pendingStore: PendingFlightStore,
     private val isLoggedInProvider: () -> Boolean = { false },
 ) : ViewModel() {
 
@@ -121,6 +128,7 @@ class ControlViewModel(
                 recomputeOutputs()
             }
         }
+        updatePendingCount()
     }
 
     /** Define qual o drone (do backend) a associar ao próximo voo gravado. */
@@ -319,27 +327,71 @@ class ControlViewModel(
             _state.update { it.copy(upload = UploadState.SKIPPED) }
             return
         }
-        if (!isLoggedInProvider()) {
-            _state.update {
-                it.copy(upload = UploadState.SKIPPED, message = "Voo gravado localmente (sem conta).")
-            }
-            return
-        }
 
-        _state.update { it.copy(upload = UploadState.UPLOADING) }
-        val req = FlightReq(
-            drone = droneId,
+        // OFFLINE-FIRST: grava SEMPRE o voo localmente, mesmo sem sessão/Internet
+        // (no controlo está-se no WiFi do drone, sem Internet).
+        val pf = PendingFlight(
+            localId = pendingStore.newLocalId(),
+            droneId = droneId,
             startedAt = flightStartedIso,
             endedAt = endedIso,
             status = "completed",
+            points = points,
         )
-        when (backend.createFlightWithTelemetry(req, points)) {
-            is Outcome.Ok -> _state.update {
-                it.copy(upload = UploadState.DONE, message = "Voo enviado para o backend.")
+        pendingStore.save(pf)
+        updatePendingCount()
+        _state.update { it.copy(message = "Voo guardado localmente.") }
+
+        // Se já houver sessão, tenta sincronizar logo (envia também pendentes anteriores).
+        if (isLoggedInProvider()) {
+            syncPendingInternal()
+        }
+    }
+
+    /** Sincroniza com o backend os voos guardados localmente. Requer sessão + Internet. */
+    fun syncPending() {
+        if (!isLoggedInProvider()) {
+            _state.update { it.copy(message = "Inicia sessão (com Internet) para sincronizar.") }
+            return
+        }
+        viewModelScope.launch { syncPendingInternal() }
+    }
+
+    private suspend fun syncPendingInternal() {
+        val pend = pendingStore.list()
+        if (pend.isEmpty()) {
+            updatePendingCount()
+            return
+        }
+        _state.update { it.copy(upload = UploadState.UPLOADING) }
+        var ok = 0
+        var fail = 0
+        for (pf in pend) {
+            val req = FlightReq(
+                drone = pf.droneId,
+                startedAt = pf.startedAt,
+                endedAt = pf.endedAt,
+                status = pf.status,
+            )
+            when (backend.createFlightWithTelemetry(req, pf.points)) {
+                is Outcome.Ok -> { pendingStore.delete(pf.localId); ok++ }
+                is Outcome.Err -> fail++
             }
-            is Outcome.Err -> _state.update {
-                it.copy(upload = UploadState.FAILED, message = "Falha ao enviar o voo.")
-            }
+        }
+        updatePendingCount()
+        _state.update {
+            it.copy(
+                upload = if (fail == 0) UploadState.DONE else UploadState.FAILED,
+                message = if (fail == 0) "Sincronizados $ok voo(s) com o backend."
+                else "$ok enviado(s), $fail por enviar (tenta com Internet).",
+            )
+        }
+    }
+
+    private fun updatePendingCount() {
+        viewModelScope.launch {
+            val n = pendingStore.count()
+            _state.update { it.copy(pendingFlights = n) }
         }
     }
 
@@ -378,11 +430,12 @@ class ControlViewModel(
         private val drone: DroneRepository,
         private val backend: BackendRepository,
         private val settings: SettingsStore,
+        private val pendingStore: PendingFlightStore,
         private val isLoggedInProvider: () -> Boolean,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ControlViewModel(drone, backend, settings, isLoggedInProvider) as T
+            return ControlViewModel(drone, backend, settings, pendingStore, isLoggedInProvider) as T
         }
     }
 }

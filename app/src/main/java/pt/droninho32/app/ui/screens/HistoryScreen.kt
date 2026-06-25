@@ -4,10 +4,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -29,20 +32,38 @@ import pt.droninho32.app.ui.components.LoadingBox
 import pt.droninho32.app.ui.components.SectionCard
 import pt.droninho32.app.viewmodel.FlightsViewModel
 
-/** Histórico de voos (recurso do backend). Toca num voo para abrir o detalhe. */
+/**
+ * Histórico de voos (recurso do backend). Requer sessão; sem ela, mostra um convite
+ * para ir à aba Conta (precisa de Internet) em vez de um erro.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     vm: FlightsViewModel,
+    loggedIn: Boolean,
     onOpenFlight: (Int) -> Unit,
+    onOpenAccount: () -> Unit,
 ) {
     val state by vm.list.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) { vm.refreshList() }
+    LaunchedEffect(loggedIn) { if (loggedIn) vm.refreshList() }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.history_title)) }) },
     ) { padding ->
+        if (!loggedIn) {
+            Column(
+                Modifier.padding(padding).fillMaxSize().padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(stringResource(R.string.history_login_prompt), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = onOpenAccount) { Text(stringResource(R.string.account_go)) }
+            }
+            return@Scaffold
+        }
+
         when {
             state.loading && state.flights.isEmpty() -> LoadingBox(Modifier.padding(padding))
             else -> Column(Modifier.padding(padding).fillMaxSize()) {
