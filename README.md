@@ -63,8 +63,8 @@ Valor por omissão (definido em `app/build.gradle.kts` → `DEFAULT_BACKEND_URL`
 
 | Cenário | URL a usar |
 |---------|-----------|
-| **Emulador Android** a falar com Django no PC | `http://10.0.2.2:8000/` (default) |
-| **Telemóvel real** na mesma rede que o PC | `http://<IP-do-PC>:8000/` |
+| **Emulador Android** a falar com Django no PC | `http://10.0.2.2:8002/` (default) |
+| **Telemóvel real** na mesma rede que o PC | `http://<IP-do-PC>:8002/` |
 | Backend publicado | `https://o-teu-dominio/` |
 
 > `10.0.2.2` é o alias especial do emulador para o `localhost` da máquina anfitriã.
@@ -173,7 +173,7 @@ di/         ServiceLocator (DI manual, sem Hilt para manter o MVP leve)
 
 `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `ACCESS_FINE_LOCATION`,
 `ACCESS_COARSE_LOCATION`. Tem `android:usesCleartextTraffic="true"` porque o drone
-fala HTTP em `192.168.4.1` e o backend de desenvolvimento (`10.0.2.2:8000`) também.
+fala HTTP em `192.168.4.1` e o backend de desenvolvimento (`10.0.2.2:8002`) também.
 Em produção, usar HTTPS e remover o cleartext.
 
 ---

@@ -22,7 +22,7 @@
     <string name="login_switch_to_register">Não tens conta? Regista-te</string>
     <string name="login_switch_to_login">Já tens conta? Entra</string>
     <string name="login_backend_url">URL do backend</string>
-    <string name="login_backend_url_hint">http://10.0.2.2:8000/</string>
+    <string name="login_backend_url_hint">http://10.0.2.2:8002/</string>
     <string name="login_invalid">Credenciais inválidas.</string>
     <string name="login_offline_hint">Podes controlar o drone sem ligação ao backend a partir do ecrã de controlo.</string>
     <string name="login_skip">Continuar sem conta (só controlo do drone)</string>
