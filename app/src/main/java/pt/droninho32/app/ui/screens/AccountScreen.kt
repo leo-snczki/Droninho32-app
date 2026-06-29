@@ -86,7 +86,7 @@ fun AccountScreen(
                 // ---- Sessão iniciada: perfil ----
                 state.loggedIn -> {
                     SectionCard(title = stringResource(R.string.account_logged_in)) {
-                        LabelValueRow(stringResource(R.string.login_username), state.username ?: "—")
+                        LabelValueRow(stringResource(R.string.login_username), state.username ?: "")
                         LabelValueRow(stringResource(R.string.login_backend_url), state.backendUrl)
                         LabelValueRow(stringResource(R.string.account_pending), ctrl.pendingFlights.toString())
                     }

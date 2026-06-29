@@ -46,7 +46,7 @@
     <!-- Conta (login opcional) -->
     <string name="account_title">Conta</string>
     <string name="account_logged_in">Sessão iniciada</string>
-    <string name="account_explain">Para controlar o drone não precisas de conta — basta ligares o telemóvel ao WiFi \"Droninho32\". A conta serve só para guardar e ver os teus voos no backend, quando tiveres Internet.</string>
+    <string name="account_explain">Para controlar o drone não precisas de conta. Basta ligares o telemóvel ao WiFi \"Droninho32\". A conta serve só para guardar e ver os teus voos no backend, quando tiveres Internet.</string>
     <string name="account_my_drones">Os meus drones</string>
     <string name="account_go">Ir para a Conta</string>
     <string name="history_login_prompt">Inicia sessão na aba Conta (precisa de Internet) para veres os teus voos guardados.</string>
@@ -120,7 +120,7 @@
     <string name="shot_failed">Falha ao guardar a captura.</string>
     <string name="rec_started">Gravação de tela iniciada.</string>
     <string name="rec_stopped">Gravação guardada em Movies/Droninho32.</string>
-    <string name="rec_notif_title">Droninho32 — a gravar tela</string>
+    <string name="rec_notif_title">Droninho32: a gravar tela</string>
     <string name="rec_notif_text">Toca em \"Parar gravação\" na app para terminar.</string>
     <string name="rec_channel_name">Gravação de tela</string>
 
